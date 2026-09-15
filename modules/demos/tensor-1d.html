@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tensor1D demo | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Tensor1D demo</h1>
+    <p>Performing operations on one-dimensional lists of numbers.</p>
+    <div id="console"></div>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.3/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI, Tensor1D } from "endap"
+
+    const output = CLI.create("320px")
+    document.getElementById("console").append(output.el)
+
+    const first = [1, 2, 3]
+    const second = [4, 5, 6]
+
+    output.log(`First: ${JSON.stringify(first)}`)
+    output.log(`Second: ${JSON.stringify(second)}`)
+    output.log(`Add: ${JSON.stringify(Tensor1D.add(first, second))}`)
+    output.log(`Subtract: ${JSON.stringify(Tensor1D.sub(first, second))}`)
+    output.log(`Multiply: ${JSON.stringify(Tensor1D.mul(first, second))}`)
+    output.log(`Dot product: ${Tensor1D.dot(first, second)}`)
+
+    const values = Tensor1D.clone(first)
+    Tensor1D.push(values, 4)
+    Tensor1D.set(values, 0, 10)
+
+    output.log(`\nEdited clone: ${JSON.stringify(values)}`)
+    output.log(`Length: ${Tensor1D.len(values)}`)
+    output.log(`Removed last value: ${Tensor1D.pop(values)}`)
+    output.log(`Final values: ${JSON.stringify(values)}`)
+  </script>
+</body>
+</html>

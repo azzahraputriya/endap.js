@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Console demo | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Console demo</h1>
+    <p>Displaying messages inside the page with the endap console.</p>
+    <div id="console"></div>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.3/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI } from "endap"
+
+    const output = CLI.create("160px")
+    document.getElementById("console").append(output.el)
+
+    output.ver()
+    output.log("Hello from endap.js!")
+    output.log([1, 2, 3])
+  </script>
+</body>
+</html>

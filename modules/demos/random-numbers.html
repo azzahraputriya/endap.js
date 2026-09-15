@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Random-number demo | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Random-number demo</h1>
+    <p>Generating several kinds of random values with endap.js.</p>
+    <div id="console"></div>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.3/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI, RandNum } from "endap"
+
+    const output = CLI.create("220px")
+    document.getElementById("console").append(output.el)
+
+    output.log(`Integer from 1 to 10: ${RandNum.randInt(1, 10)}`)
+    output.log(`Decimal from 0 to 1: ${RandNum.randFloat(0, 1)}`)
+    output.log(`Two-decimal number from 1 to 5: ${RandNum.randFixedFloat(1, 5)}`)
+    output.log("Five dice rolls:")
+    output.log(RandNum.randIntN(1, 6, 5))
+  </script>
+</body>
+</html>
