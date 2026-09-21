@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sorting experiment | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Sorting random numbers</h1>
+    <p>Comparing ascending and descending results from the same random values.</p>
+    <div id="console"></div>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.3/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI, RandNum } from "endap"
+
+    const output = CLI.create("220px")
+    document.getElementById("console").append(output.el)
+
+    function sortNumbers(values, direction) {
+      const sorted = [...values]
+
+      // Keep the lesson's swap algorithm visible so each comparison is easy to trace.
+      for (let i = 0; i < sorted.length; i++) {
+        for (let j = i + 1; j < sorted.length; j++) {
+          const shouldSwap = direction === "ascending"
+            ? sorted[i] > sorted[j]
+            : sorted[i] < sorted[j]
+
+          if (shouldSwap) {
+            const current = sorted[i]
+            sorted[i] = sorted[j]
+            sorted[j] = current
+          }
+        }
+      }
+
+      return sorted
+    }
+
+    const values = RandNum.randIntN(10, 90, 10)
+
+    output.log(`Original:   ${values.join(", ")}`)
+    output.log(`Ascending:  ${sortNumbers(values, "ascending").join(", ")}`)
+    output.log(`Descending: ${sortNumbers(values, "descending").join(", ")}`)
+  </script>
+</body>
+</html>

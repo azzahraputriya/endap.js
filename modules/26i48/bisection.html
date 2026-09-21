@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bisection experiment | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Finding roots with bisection</h1>
+    <p>Finding both roots of f(x) = x² - 10.3x + 21.3.</p>
+    <div id="console"></div>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.3/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI } from "endap"
+
+    const output = CLI.create("560px")
+    document.getElementById("console").append(output.el)
+
+    function f(x) {
+      return x * x - 10.3 * x + 21.3
+    }
+
+    function findRoot(leftStart, rightStart, tolerance = 0.000001, maxIterations = 100) {
+      let left = leftStart
+      let right = rightStart
+      const leftValue = f(left)
+      const rightValue = f(right)
+
+      if (Math.abs(leftValue) < tolerance) return left
+      if (Math.abs(rightValue) < tolerance) return right
+
+      if (leftValue * rightValue > 0) {
+        throw new Error(`The interval [${left}, ${right}] does not surround one root.`)
+      }
+
+      output.log("iter | left       | right      | midpoint   | f(midpoint)")
+
+      for (let iteration = 1; iteration <= maxIterations; iteration++) {
+        const midpoint = (left + right) / 2
+        const midpointValue = f(midpoint)
+
+        output.log(
+          `${String(iteration).padStart(4)} | ${left.toFixed(6)} | ${right.toFixed(6)} | ${midpoint.toFixed(6)} | ${midpointValue.toFixed(8)}`
+        )
+
+        if (Math.abs(midpointValue) < tolerance || (right - left) / 2 < tolerance) {
+          return midpoint
+        }
+
+        if (f(left) * midpointValue < 0) {
+          right = midpoint
+        } else {
+          left = midpoint
+        }
+      }
+
+      throw new Error(`No root found after ${maxIterations} iterations.`)
+    }
+
+    const discriminant = Math.sqrt(10.3 ** 2 - 4 * 21.3)
+    const exactRoots = [(10.3 - discriminant) / 2, (10.3 + discriminant) / 2]
+
+    try {
+      output.log("First root in [2, 3]")
+      const firstRoot = findRoot(2, 3)
+      output.log(`Bisection: ${firstRoot.toFixed(6)}`)
+      output.log(`Formula:   ${exactRoots[0].toFixed(6)}\n`)
+
+      output.log("Second root in [7, 8]")
+      const secondRoot = findRoot(7, 8)
+      output.log(`Bisection: ${secondRoot.toFixed(6)}`)
+      output.log(`Formula:   ${exactRoots[1].toFixed(6)}`)
+    } catch (error) {
+      output.log(error instanceof Error ? error.message : String(error))
+    }
+  </script>
+</body>
+</html>
