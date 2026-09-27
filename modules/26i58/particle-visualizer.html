@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Particle data visualizer | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Particle data visualizer</h1>
+    <p>Draw generated particle data one step at a time.</p>
+
+    <canvas id="canvas" width="220" height="220">
+      Your browser does not support canvas.
+    </canvas>
+
+    <div>
+      <button id="step" type="button">Step</button>
+      <button id="start" type="button">Start</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+
+    <div id="console"></div>
+  </main>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.4/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI, RandNum, Tensor1D } from "endap"
+
+    const canvas = document.getElementById("canvas")
+    const context = canvas.getContext("2d")
+    const stepButton = document.getElementById("step")
+    const startButton = document.getElementById("start")
+    const resetButton = document.getElementById("reset")
+
+    const output = CLI.create("140px")
+    document.getElementById("console").append(output.el)
+
+    const gridSize = 5
+    const particleCount = gridSize * gridSize
+    const colors = ["red", "green", "blue", "gray"]
+
+    const x = Tensor1D.create(particleCount)
+    const y = Tensor1D.create(particleCount)
+    let radii = []
+    let colorIndexes = []
+    let particleIndex = 0
+    let timer
+
+    function generateParticles() {
+      let index = 0
+
+      for (let row = 0; row < gridSize; row++) {
+        for (let column = 0; column < gridSize; column++) {
+          x[index] = 30 + column * 40
+          y[index] = 30 + row * 40
+          index++
+        }
+      }
+
+      radii = RandNum.randIntN(5, 10, particleCount)
+      colorIndexes = RandNum.randIntN(0, colors.length - 1, particleCount)
+    }
+
+    function stopDrawing() {
+      clearInterval(timer)
+      timer = undefined
+      startButton.textContent = "Start"
+    }
+
+    function drawNextParticle() {
+      if (particleIndex >= particleCount) {
+        stopDrawing()
+        return
+      }
+
+      context.beginPath()
+      context.strokeStyle = colors[colorIndexes[particleIndex]]
+      context.lineWidth = 2
+      context.arc(
+        x[particleIndex],
+        y[particleIndex],
+        radii[particleIndex],
+        0,
+        2 * Math.PI,
+      )
+      context.stroke()
+
+      output.log(
+        `${particleIndex + 1}\t${x[particleIndex]}\t${y[particleIndex]}\t${radii[particleIndex]}\t${colors[colorIndexes[particleIndex]]}`,
+      )
+      particleIndex++
+    }
+
+    function resetParticles() {
+      stopDrawing()
+      context.clearRect(0, 0, canvas.width, canvas.height)
+      output.clear()
+      output.log("No.\tx\ty\tradius\tcolor")
+      particleIndex = 0
+      generateParticles()
+    }
+
+    stepButton.addEventListener("click", drawNextParticle)
+    startButton.addEventListener("click", () => {
+      if (timer) {
+        stopDrawing()
+      } else if (particleIndex < particleCount) {
+        timer = setInterval(drawNextParticle, 300)
+        startButton.textContent = "Stop"
+      }
+    })
+    resetButton.addEventListener("click", resetParticles)
+
+    resetParticles()
+  </script>
+</body>
+</html>
