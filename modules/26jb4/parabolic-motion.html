@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parabolic motion | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Parabolic motion</h1>
+    <p>Position of a thrown object, shown as x-t, y-t, and x-y scatter plots.</p>
+
+    <div id="cnt1"></div>
+    <br>
+    <div id="cnt2"></div>
+    <br>
+    <div id="cnt3"></div>
+  </main>
+
+  <script src="/libs/chartjs/4.5.1/chart.umd.min.js" defer></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.5/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Console as CLI, Tensor1D as T1D } from "endap"
+
+    /*
+      data
+    */
+    const x0 = 0;      // initial x position (m)
+    const y0 = 0;      // initial y position (m)
+    const v0x = 20;    // initial x velocity (m/s)
+    const v0y = 40;    // initial y velocity (m/s)
+    const ax = 0;      // x acceleration (m/s²)
+    const ay = -10;    // y acceleration (m/s²), gravity points down
+
+    const tbeg = 0;
+    const tend = 8;
+    const dt = 0.5;
+    // The lesson uses (tend - tbeg) / dt, which stops at t = 7.5 s.
+    // Adding 1 keeps the last point, t = 8 s, when the object lands.
+    const n = (tend - tbeg) / dt + 1;
+
+    const t = T1D.create(n);
+    const x = T1D.create(n);
+    const y = T1D.create(n);
+    for (let i = 0; i < n; i++) {
+      t[i] = tbeg + i * dt;
+      x[i] = x0 + v0x * t[i] + 0.5 * ax * t[i] * t[i];
+      y[i] = y0 + v0y * t[i] + 0.5 * ay * t[i] * t[i];
+    }
+
+    /*
+      Draws one console and one scatter chart inside the container cntId.
+      The same title is used for the console and the chart legend.
+      x1 goes on the horizontal axis and x2 on the vertical axis.
+    */
+    function plot(cntId, title, x1, x2, label1, label2) {
+      /* elements */
+      const cnt = document.getElementById(cntId);
+      Object.assign(cnt.style, {
+        height: "260px",
+        display: "flex",
+      });
+
+      const div = document.createElement("div");
+      // A fixed width keeps each "t  x" row on one line in all three consoles.
+      Object.assign(div.style, {
+        width: "150px",
+        flexShrink: 0,
+        display: "flex",
+        marginRight: "10px",
+      });
+
+      // Chart.js resizes the canvas to fit its parent, so the canvas gets its own box.
+      const box = document.createElement("div");
+      Object.assign(box.style, {
+        flex: 1,
+        minWidth: 0,
+        position: "relative",
+      });
+      const can = document.createElement("canvas");
+      Object.assign(can.style, {
+        border: "1px solid var(--muted-border)",
+      });
+      box.append(can);
+
+      /* console */
+      const consoles = CLI.create("85%");
+      const cli = consoles.el;
+      Object.assign(cli.style, {
+        flex: 1,
+      });
+      consoles.setTitle(title);
+
+      /* points for the chart */
+      const data1 = T1D.create(n);
+      for (let i = 0; i < n; i++) {
+        const point = {
+          x: x1[i],
+          y: x2[i],
+        };
+        data1[i] = point;
+      }
+
+      /* output to cli */
+      consoles.log(label1 + "\t" + label2);
+      for (let i = 0; i < n; i++) {
+        const x1s = x1[i].toFixed(1);
+        const x2s = x2[i].toFixed(1);
+        consoles.log(x1s, "\t");
+        consoles.log(x2s);
+      }
+
+      /* output to canvas with chartjs */
+      const config = {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: title,
+              data: data1,
+              radius: 4,
+              hoverRadius: 6,
+              showLine: true,
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: label1, font: { size: 14 } },
+            },
+            y: {
+              type: 'linear',
+              title: { display: true, text: label2, font: { size: 14 } },
+            },
+          },
+        },
+      };
+      new Chart(can, config);
+
+      /* layouts */
+      cnt.append(div);
+      div.append(cli);
+      cnt.append(box);
+    }
+
+    // Chart.js is loaded with "defer", so wait until the page is ready.
+    window.addEventListener("load", () => {
+      plot("cnt1", "data x-t", t, x, "t (s)", "x (m)");
+      plot("cnt2", "data y-t", t, y, "t (s)", "y (m)");
+      plot("cnt3", "data x-y", x, y, "x (m)", "y (m)");
+    });
+  </script>
+</body>
+</html>

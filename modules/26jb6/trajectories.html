@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trajectories from differential equations | endap.js</title>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Trajectories from differential equations</h1>
+    <p>Each chart compares two starting velocities for the same equation.</p>
+
+    <h2>Eqn (1): gravity</h2>
+    <div id="cnt1"></div>
+
+    <h2>Eqn (2): spring force</h2>
+    <div id="cnt2"></div>
+    <br>
+    <div id="cnt3"></div>
+
+    <h2>Eqn (3): magnetic force</h2>
+    <div id="cnt4"></div>
+    <br>
+    <div id="cnt5"></div>
+  </main>
+
+  <script src="/libs/chartjs/4.5.1/chart.umd.min.js" defer></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "endap": "/libs/endap/0.0.5/endap.min.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { Tensor1D as T1D } from "endap"
+
+    /*
+      Returns n time values from tbeg to tend, both ends included.
+    */
+    function times(tbeg, tend, dt) {
+      const n = Math.round((tend - tbeg) / dt) + 1;
+      const t = T1D.create(n);
+      for (let i = 0; i < n; i++) {
+        t[i] = tbeg + i * dt;
+      }
+      return t;
+    }
+
+    /*
+      Draws one scatter chart with several lines inside the container cntId.
+      Each item in lines has a label and two arrays: x1 (horizontal) and x2 (vertical).
+      The axis ranges are fixed so that circles look round and lines look straight.
+    */
+    function plot(cntId, lines, label1, label2, range1, range2) {
+      const box = document.getElementById(cntId);
+      Object.assign(box.style, {
+        width: "480px",
+        height: "360px",
+        position: "relative",
+      });
+      const can = document.createElement("canvas");
+      Object.assign(can.style, {
+        border: "1px solid var(--muted-border)",
+      });
+      box.append(can);
+
+      const datasets = [];
+      for (const line of lines) {
+        const data = T1D.create(line.x1.length);
+        for (let i = 0; i < line.x1.length; i++) {
+          data[i] = { x: line.x1[i], y: line.x2[i] };
+        }
+        datasets.push({
+          label: line.label,
+          data: data,
+          radius: 0,
+          showLine: true,
+        });
+      }
+
+      const config = {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              type: 'linear', min: range1[0], max: range1[1],
+              title: { display: true, text: label1, font: { size: 14 } },
+            },
+            y: {
+              type: 'linear', min: range2[0], max: range2[1],
+              title: { display: true, text: label2, font: { size: 14 } },
+            },
+          },
+        },
+      };
+      new Chart(can, config);
+    }
+
+    /*
+      Eqn (1): m r'' - m g = 0, with g = -10 m/s² in the y direction.
+      Solution: x = v0x t, y = v0y t + (1/2) g t², starting at the origin.
+    */
+    function gravity(v0x, v0y) {
+      const g = -10;
+      const t = times(0, 8, 0.1);
+      const x = T1D.create(t.length);
+      const y = T1D.create(t.length);
+      for (let i = 0; i < t.length; i++) {
+        x[i] = v0x * t[i];
+        y[i] = v0y * t[i] + 0.5 * g * t[i] * t[i];
+      }
+      return { x, y };
+    }
+
+    /*
+      Eqn (2) with a restoring force: m r'' + k r = 0, so omega = sqrt(k/m).
+      Solution for each axis: x = x0 cos(omega t) + (v0x / omega) sin(omega t).
+      Start at x0 = 1 m, y0 = 0, and pick omega = 2 pi rad/s (period 1 s).
+    */
+    function spring(v0x, v0y) {
+      const omega = 2 * Math.PI;
+      const x0 = 1;
+      const y0 = 0;
+      const t = times(0, 1, 0.01);
+      const x = T1D.create(t.length);
+      const y = T1D.create(t.length);
+      const r = T1D.create(t.length);
+      for (let i = 0; i < t.length; i++) {
+        const c = Math.cos(omega * t[i]);
+        const s = Math.sin(omega * t[i]);
+        x[i] = x0 * c + (v0x / omega) * s;
+        y[i] = y0 * c + (v0y / omega) * s;
+        r[i] = Math.sqrt(x[i] * x[i] + y[i] * y[i]);
+      }
+      return { t, x, y, r };
+    }
+
+    /*
+      Eqn (3): m r'' + q B x r' = 0 with B along z.
+      The part of v along B (vz) feels no force, so z = vz t.
+      The part of v across B turns in a circle with omega = qB/m.
+      Pick omega = 2 pi rad/s and radius R = 1 m.
+    */
+    function magnetic(vz) {
+      const omega = 2 * Math.PI;
+      const R = 1;
+      const t = times(0, 3, 0.01);
+      const x = T1D.create(t.length);
+      const y = T1D.create(t.length);
+      const z = T1D.create(t.length);
+      for (let i = 0; i < t.length; i++) {
+        x[i] = R * Math.cos(omega * t[i]);
+        y[i] = R * Math.sin(omega * t[i]);
+        z[i] = vz * t[i];
+      }
+      return { x, y, z };
+    }
+
+    // Chart.js is loaded with "defer", so wait until the page is ready.
+    window.addEventListener("load", () => {
+      const thrown = gravity(20, 40);
+      const straight = gravity(0, 40);
+      plot("cnt1", [
+        { label: "v0 = (20, 40) m/s: parabola", x1: thrown.x, x2: thrown.y },
+        { label: "v0 = (0, 40) m/s, along g: straight line", x1: straight.x, x2: straight.y },
+      ], "x (m)", "y (m)", [-20, 180], [-30, 120]);
+
+      const line = spring(0, 0);
+      const ellipse = spring(0, 3);
+      plot("cnt2", [
+        { label: "v0y = 0: 1-d motion on the x axis", x1: line.x, x2: line.y },
+        { label: "v0y = 3 m/s: ellipse", x1: ellipse.x, x2: ellipse.y },
+      ], "x (m)", "y (m)", [-1.6, 1.6], [-1.2, 1.2]);
+      plot("cnt3", [
+        { label: "v0y = 0: distance r", x1: line.t, x2: line.r },
+        { label: "v0y = 3 m/s: distance r", x1: ellipse.t, x2: ellipse.r },
+      ], "t (s)", "r (m)", [0, 1], [0, 1.2]);
+
+      const flat = magnetic(0);
+      const helix = magnetic(0.5);
+      plot("cnt4", [
+        { label: "seen from above, both cases: circle", x1: flat.x, x2: flat.y },
+      ], "x (m)", "y (m)", [-2, 2], [-1.5, 1.5]);
+      plot("cnt5", [
+        { label: "v · B = 0: stays in one plane", x1: flat.z, x2: flat.x },
+        { label: "vz = 0.5 m/s: helix", x1: helix.z, x2: helix.x },
+      ], "z (m), along B", "x (m)", [-0.25, 1.75], [-1.5, 1.5]);
+    });
+  </script>
+</body>
+</html>
